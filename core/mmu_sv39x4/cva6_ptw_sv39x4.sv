@@ -75,9 +75,14 @@ module cva6_ptw_sv39x4
     input  logic [riscv::PPNW-1:0] hgatp_ppn_i,    // ppn from hgatp
     input  logic                   mxr_i,
     input  logic                   vmxr_i,
+    // TLB miss filters
+    input riscv::tlb_filter_cfg_t itlb_filter_cfg_i,
+    input riscv::tlb_filter_cfg_t dtlb_filter_cfg_i,
     // Performance counters
     output logic                   itlb_miss_o,
     output logic                   dtlb_miss_o,
+    output logic                   itlb_filtered_miss_o,
+    output logic                   dtlb_filtered_miss_o,
     // PMP
 
     input riscv::pmpcfg_t [15:0] pmpcfg_i,
@@ -299,7 +304,9 @@ module cva6_ptw_sv39x4
     gpaddr                 = gpaddr_q;
 
     itlb_miss_o            = 1'b0;
+    itlb_filtered_miss_o   = 1'b0;
     dtlb_miss_o            = 1'b0;
+    dtlb_filtered_miss_o   = 1'b0;
 
     case (state_q)
 
@@ -332,7 +339,10 @@ module cva6_ptw_sv39x4
           tlb_update_vmid_n = vmid_i;
           vaddr_n           = itlb_vaddr_i;
           state_d           = WAIT_GRANT;
-          itlb_miss_o       = 1'b1;
+            itlb_miss_o       = 1'b1;
+          if (itlb_vaddr_i >= itlb_filter_cfg_i.addr_base && itlb_vaddr_i < itlb_filter_cfg_i.addr_base + itlb_filter_cfg_i.addr_size) begin
+            itlb_filtered_miss_o = 1'b1;
+          end
           // we got an DTLB miss
         end else if ((en_ld_st_translation_i || en_ld_st_g_translation_i) & dtlb_access_i & ~dtlb_hit_i) begin
           if (en_ld_st_translation_i && en_ld_st_g_translation_i) begin
@@ -354,6 +364,9 @@ module cva6_ptw_sv39x4
           vaddr_n           = dtlb_vaddr_i;
           state_d           = WAIT_GRANT;
           dtlb_miss_o       = 1'b1;
+          if (dtlb_vaddr_i >= dtlb_filter_cfg_i.addr_base && dtlb_vaddr_i < dtlb_filter_cfg_i.addr_base + dtlb_filter_cfg_i.addr_size) begin
+            dtlb_filtered_miss_o = 1'b1;
+          end
         end
       end
 

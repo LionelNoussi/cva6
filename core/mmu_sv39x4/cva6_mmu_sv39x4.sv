@@ -80,9 +80,14 @@ module cva6_mmu_sv39x4
     input logic flush_tlb_i,
     input logic flush_tlb_vvma_i,
     input logic flush_tlb_gvma_i,
+    // TLB miss filters
+    input riscv::tlb_filter_cfg_t itlb_filter_cfg_i,
+    input riscv::tlb_filter_cfg_t dtlb_filter_cfg_i,
     // Performance counters
     output logic itlb_miss_o,
     output logic dtlb_miss_o,
+    output logic itlb_filtered_miss_o,
+    output logic dtlb_filtered_miss_o,
     // PTW memory interface
     input dcache_req_o_t req_port_i,
     output dcache_req_i_t req_port_o,
@@ -237,6 +242,11 @@ module cva6_mmu_sv39x4
       .pmpcfg_i,
       .pmpaddr_i,
       .bad_gpaddr_o(ptw_bad_gpaddr),
+
+      .itlb_miss_o,
+      .itlb_filtered_miss_o,
+      .dtlb_miss_o,
+      .dtlb_filtered_miss_o,
       .*
   );
 

@@ -35,7 +35,9 @@ module perf_counters
     input logic l1_dcache_miss_i,
     // from MMU
     input logic itlb_miss_i,
+    input logic itlb_filtered_miss_i,
     input logic dtlb_miss_i,
+    input logic dtlb_filtered_miss_i,
     // from issue stage
     input logic sb_full_i,
     // from frontend
@@ -124,6 +126,8 @@ module perf_counters
         5'b10100: events[i] = |int_event;  //Integer instructions
         5'b10101: events[i] = |fp_event;  //Floating Point Instructions
         5'b10110: events[i] = stall_issue_i;  //Pipeline bubbles
+        5'b10111: events[i] = itlb_filtered_miss_i;
+        5'b11000: events[i] = dtlb_filtered_miss_i;
         default: events[i] = 0;
       endcase
     end

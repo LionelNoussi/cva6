@@ -109,10 +109,15 @@ module load_store_unit
     input  logic                                flush_tlb_i,
     input  logic                                flush_tlb_vvma_i,
     input  logic                                flush_tlb_gvma_i,
+    // Filter configs for TLB misses
+    input riscv::tlb_filter_cfg_t               itlb_filter_cfg_i,
+    input riscv::tlb_filter_cfg_t               dtlb_filter_cfg_i,
     // Instruction TLB miss - PERF_COUNTERS
     output logic                                itlb_miss_o,
+    output logic                                itlb_filtered_miss_o,
     // Data TLB miss - PERF_COUNTERS
     output logic                                dtlb_miss_o,
+    output logic                                dtlb_filtered_miss_o,
 
     // Data cache request output - CACHES
     input  dcache_req_o_t  [ 2:0]                  dcache_req_ports_i,
@@ -325,6 +330,8 @@ module load_store_unit
 
     assign itlb_miss_o                         = 1'b0;
     assign dtlb_miss_o                         = 1'b0;
+    assign itlb_filtered_miss_o                = 1'b0;
+    assign dtlb_filtered_miss_o                = 1'b0;
     assign dtlb_ppn                            = mmu_vaddr_plen[riscv::PLEN-1:12];
     assign dtlb_hit                            = 1'b1;
 

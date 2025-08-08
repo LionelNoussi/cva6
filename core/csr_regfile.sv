@@ -169,6 +169,8 @@ module csr_regfile
     // Accelerator memory consistent mode - ACC_DISPATCHER
     output logic acc_cons_en_o,
     // Performance Counter
+    output riscv::tlb_filter_cfg_t itlb_filter_cfg_o,  // Start address for filtered ITLB miss performance counter
+    output riscv::tlb_filter_cfg_t dtlb_filter_cfg_o,  // Address range in Bytes for filtered ITLB miss performance counter
     // read/write address to performance counter module - PERF_COUNTERS
     output logic [11:0] perf_addr_o,
     // write data to performance counter module - PERF_COUNTERS
@@ -269,6 +271,12 @@ module csr_regfile
 
   logic [63:0] cycle_q, cycle_d;
   logic [63:0] instret_q, instret_d;
+
+  // Filtered TLB miss config registers
+  riscv::tlb_filter_cfg_t itlb_filter_cfg_d, itlb_filter_cfg_q; 
+  riscv::tlb_filter_cfg_t dtlb_filter_cfg_d, dtlb_filter_cfg_q;
+  assign itlb_filter_cfg_o = itlb_filter_cfg_q;
+  assign dtlb_filter_cfg_o = dtlb_filter_cfg_q;
 
   riscv::pmpcfg_t [15:0] pmpcfg_q, pmpcfg_d;
   logic [15:0][riscv::PLEN-3:0] pmpaddr_q, pmpaddr_d;
@@ -615,6 +623,16 @@ module csr_regfile
         riscv::CSR_MIMPID: csr_rdata = '0;  // not implemented
         riscv::CSR_MHARTID: csr_rdata = hart_id_i;
         riscv::CSR_MCONFIGPTR: csr_rdata = '0;  // not implemented
+        riscv::CSR_ITLBM_ADDR_BASE: csr_rdata = (riscv::XLEN == 32) ? itlb_filter_cfg_q.addr_base[31:0] : itlb_filter_cfg_q.addr_base;
+        riscv::CSR_ITLBM_ADDR_BASEH: 
+        if (riscv::XLEN == 32) csr_rdata = itlb_filter_cfg_q.addr_base[63:32];
+        else read_access_exception = 1'b1;
+        riscv::CSR_ITLBM_ADDR_SIZE: csr_rdata = itlb_filter_cfg_q.addr_size;
+        riscv::CSR_DTLBM_ADDR_BASE: csr_rdata = (riscv::XLEN == 32) ? dtlb_filter_cfg_q.addr_base[31:0] : dtlb_filter_cfg_q.addr_base;
+        riscv::CSR_DTLBM_ADDR_BASEH:
+        if (riscv::XLEN == 32) csr_rdata = dtlb_filter_cfg_q.addr_base[63:32];
+        else read_access_exception = 1'b1;
+        riscv::CSR_DTLBM_ADDR_SIZE: csr_rdata = dtlb_filter_cfg_q.addr_size;
         riscv::CSR_MCOUNTINHIBIT:
         if (PERF_COUNTER_EN)
           csr_rdata = {{(riscv::XLEN - (MHPMCounterNum + 3)) {1'b0}}, mcountinhibit_q};
@@ -862,6 +880,9 @@ module csr_regfile
     hgatp           = hgatp_q;
     vsatp           = vsatp_q;
     instret         = instret_q;
+
+    itlb_filter_cfg_d = itlb_filter_cfg_q;
+    dtlb_filter_cfg_d = dtlb_filter_cfg_q;
 
     mcountinhibit_d = mcountinhibit_q;
 
@@ -1460,6 +1481,20 @@ module csr_regfile
         riscv::CSR_MENVCFGH: begin
           if (!CVA6Cfg.RVU || riscv::XLEN != 32) update_access_exception = 1'b1;
         end
+        riscv::CSR_ITLBM_ADDR_BASE:
+        if (riscv::XLEN == 32) itlb_filter_cfg_d.addr_base[31:0] = csr_wdata[31:0];
+        else itlb_filter_cfg_d.addr_base = csr_wdata;
+        riscv::CSR_ITLBM_ADDR_BASEH:
+        if (riscv::XLEN == 32) itlb_filter_cfg_d.addr_base[63:32] = csr_wdata[31:0];
+        else update_access_exception = 1'b1;
+        riscv::CSR_ITLBM_ADDR_SIZE: itlb_filter_cfg_d.addr_size = csr_wdata[31:0];
+        riscv::CSR_DTLBM_ADDR_BASE:
+        if (riscv::XLEN == 32) dtlb_filter_cfg_d.addr_base[31:0] = csr_wdata[31:0];
+        else dtlb_filter_cfg_d.addr_base = csr_wdata;
+        riscv::CSR_DTLBM_ADDR_BASEH:
+        if (riscv::XLEN == 32) dtlb_filter_cfg_d.addr_base[63:32] = csr_wdata[31:0];
+        else update_access_exception = 1'b1;
+        riscv::CSR_DTLBM_ADDR_SIZE: dtlb_filter_cfg_d.addr_size = csr_wdata[31:0];
         riscv::CSR_MCOUNTINHIBIT:
         if (PERF_COUNTER_EN) mcountinhibit_d = {csr_wdata[MHPMCounterNum+2:2], 1'b0, csr_wdata[0]};
         else update_access_exception = 1'b1;
@@ -2440,6 +2475,8 @@ module csr_regfile
       fiom_q           <= '0;
       dcache_q         <= {{riscv::XLEN - 1{1'b0}}, 1'b1};
       icache_q         <= {{riscv::XLEN - 1{1'b0}}, 1'b1};
+      itlb_filter_cfg_q <= '0;
+      dtlb_filter_cfg_q <= '0;
       mcountinhibit_q  <= '0;
       acc_cons_q       <= {{riscv::XLEN - 1{1'b0}}, CVA6Cfg.EnableAccelerator};
       fence_t_pad_q    <= {riscv::XLEN{1'b0}};
@@ -2525,6 +2562,8 @@ module csr_regfile
       fiom_q          <= fiom_d;
       dcache_q        <= dcache_d;
       icache_q        <= icache_d;
+      itlb_filter_cfg_q <= itlb_filter_cfg_d;
+      dtlb_filter_cfg_q <= dtlb_filter_cfg_d;
       mcountinhibit_q <= mcountinhibit_d;
       acc_cons_q      <= acc_cons_d;
       fence_t_pad_q   <= fence_t_pad_d;

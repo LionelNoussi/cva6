@@ -442,13 +442,16 @@ module cva6
   // ----------------------------
   // Performance Counters <-> *
   // ----------------------------
+  riscv::tlb_filter_cfg_t itlb_filter_cfg, dtlb_filter_cfg;
   logic [11:0] addr_csr_perf;
   riscv::xlen_t data_csr_perf, data_perf_csr;
   logic                                                  we_csr_perf;
 
   logic                                                  icache_flush_ctrl_cache;
   logic                                                  itlb_miss_ex_perf;
+  logic                                                  itlb_filtered_miss_ex_perf;
   logic                                                  dtlb_miss_ex_perf;
+  logic                                                  dtlb_filtered_miss_ex_perf;
   logic                                                  dcache_miss_cache_perf;
   logic                                                  icache_miss_cache_perf;
   logic          [   NumPorts-1:0][DCACHE_SET_ASSOC-1:0] miss_vld_bits;
@@ -824,8 +827,12 @@ module cva6
       // Accelerator
       .acc_valid_i             (acc_valid_acc_ex),
       // Performance counters
+      .itlb_filter_cfg_i       (itlb_filter_cfg),
+      .dtlb_filter_cfg_i       (dtlb_filter_cfg),
       .itlb_miss_o             (itlb_miss_ex_perf),
+      .itlb_filtered_miss_o    (itlb_filtered_miss_ex_perf),
       .dtlb_miss_o             (dtlb_miss_ex_perf),
+      .dtlb_filtered_miss_o    (dtlb_filtered_miss_ex_perf),
       // Memory Management
       .enable_translation_i    (enable_translation_csr_ex),      // from CSR
       .enable_g_translation_i  (enable_g_translation_csr_ex),    // from CSR
@@ -986,6 +993,8 @@ module cva6
       .fence_t_pad_o           (fence_t_pad_csr_ctrl),
       .fence_t_src_sel_o       (fence_t_src_sel_csr_ctrl),
       .fence_t_ceil_i          (fence_t_ceil_csr_ctrl),
+      .itlb_filter_cfg_o       (itlb_filter_cfg),
+      .dtlb_filter_cfg_o       (dtlb_filter_cfg),
       .perf_addr_o             (addr_csr_perf),
       .perf_data_o             (data_csr_perf),
       .perf_data_i             (data_perf_csr),
@@ -1021,7 +1030,9 @@ module cva6
         .l1_icache_miss_i   (icache_miss_cache_perf),
         .l1_dcache_miss_i   (dcache_miss_cache_perf),
         .itlb_miss_i        (itlb_miss_ex_perf),
+        .itlb_filtered_miss_i (itlb_filtered_miss_ex_perf),
         .dtlb_miss_i        (dtlb_miss_ex_perf),
+        .dtlb_filtered_miss_i (dtlb_filtered_miss_ex_perf),
         .sb_full_i          (sb_full),
         .if_empty_i         (~fetch_valid_if_id),
         .ex_i               (ex_commit),
