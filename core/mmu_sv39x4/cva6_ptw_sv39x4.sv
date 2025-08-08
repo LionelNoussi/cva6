@@ -339,7 +339,7 @@ module cva6_ptw_sv39x4
           tlb_update_vmid_n = vmid_i;
           vaddr_n           = itlb_vaddr_i;
           state_d           = WAIT_GRANT;
-            itlb_miss_o       = 1'b1;
+          itlb_miss_o       = 1'b1;
           if (itlb_vaddr_i >= itlb_filter_cfg_i.addr_base && itlb_vaddr_i < itlb_filter_cfg_i.addr_base + itlb_filter_cfg_i.addr_size) begin
             itlb_filtered_miss_o = 1'b1;
           end

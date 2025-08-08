@@ -169,8 +169,9 @@ module csr_regfile
     // Accelerator memory consistent mode - ACC_DISPATCHER
     output logic acc_cons_en_o,
     // Performance Counter
-    output riscv::tlb_filter_cfg_t itlb_filter_cfg_o,  // Start address for filtered ITLB miss performance counter
-    output riscv::tlb_filter_cfg_t dtlb_filter_cfg_o,  // Address range in Bytes for filtered ITLB miss performance counter
+    // Configs to filter TLB misses
+    output riscv::tlb_filter_cfg_t itlb_filter_cfg_o,
+    output riscv::tlb_filter_cfg_t dtlb_filter_cfg_o,
     // read/write address to performance counter module - PERF_COUNTERS
     output logic [11:0] perf_addr_o,
     // write data to performance counter module - PERF_COUNTERS
