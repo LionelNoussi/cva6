@@ -510,12 +510,12 @@ package riscv;
     CSR_MTVEC            = 12'h305,
     CSR_MCOUNTEREN       = 12'h306,
     CSR_MSTATUSH         = 12'h310,
-    CSR_ITLBM_ADDR_BASE  = 12'h311,  // Instruction TLB miss start address for filtered itlb performance monitor event
-    CSR_ITLBM_ADDR_BASEH = 12'h312,  // Only valid in XLEN32
-    CSR_ITLBM_ADDR_SIZE  = 12'h313,  // Instruction TLB miss address size in Bytes for filtered itlb performance monitor event
-    CSR_DTLBM_ADDR_BASE  = 12'h314,  // Data TLB miss start address for filtered dtlb performance monitor event
-    CSR_DTLBM_ADDR_BASEH = 12'h315,  // Only valid in XLEN32
-    CSR_DTLBM_ADDR_SIZE  = 12'h316,  // Data TLB miss address size in Bytes for filtered dtlb performance monitor event
+    CSR_ITLBM_ADDR_BASE  = 12'h311,  // Start address (aligned to SIZE) for filtered ITLB miss counting
+    CSR_ITLBM_ADDR_BASEH = 12'h312,  // Upper 32 bits of start address (only valid in XLEN=32)
+    CSR_ITLBM_ADDR_MASK  = 12'h313,  // Address mask = ~(SIZE - 1), SIZE = power of 2 (max 2^32)
+    CSR_DTLBM_ADDR_BASE  = 12'h314,  // Start address (aligned to SIZE) for filtered DTLB miss counting
+    CSR_DTLBM_ADDR_BASEH = 12'h315,  // Upper 32 bits of start address (only valid in XLEN=32)
+    CSR_DTLBM_ADDR_MASK  = 12'h316,  // Address mask = ~(SIZE - 1), SIZE = power of 2 (max 2^32)
     CSR_MCOUNTINHIBIT    = 12'h320,
     CSR_MHPM_EVENT_3     = 12'h323,  //Machine performance monitoring Event Selector
     CSR_MHPM_EVENT_4     = 12'h324,  //Machine performance monitoring Event Selector
@@ -850,8 +850,9 @@ package riscv;
 
   // Config Struct for filtered TLB misses
   typedef struct packed {
-    logic [63:0] addr_base;
-    logic [31:0] addr_size; // size in bytes
+      logic [63:0] addr_base;   // Start address of filter region; must be aligned to SIZE
+      logic [31:0] addr_mask;   // Address mask = ~(SIZE - 1), SIZE is a power of 2 (max 2^32 bytes)
+                                // Example: SIZE=1MiB -> addr_mask = 32'hFFF0_0000
   } tlb_filter_cfg_t;
 
   // -----

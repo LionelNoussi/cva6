@@ -246,6 +246,17 @@ module cva6_ptw_sv39x4
       .allow_o      (allow_access)
   );
 
+  // Expanded filter masks.
+  // ----------------------
+  // We assume SIZE is a power of two and addr_base is aligned to SIZE.
+  // Then a range check can be done with a masked equality:
+  //   mask = ~(SIZE - 1)
+  //   in_range = ((vaddr & mask) == (addr_base & mask))
+  // SW provides the low-32b of mask; high-32b are forced to 1s so the window
+  // fits within a 4 GiB segment (max SIZE = 2^32).
+  wire [63:0] itlb_addr_mask = {32'hFFFF_FFFF, itlb_filter_cfg_i.addr_mask};
+  wire [63:0] dtlb_addr_mask = {32'hFFFF_FFFF, dtlb_filter_cfg_i.addr_mask};
+
   //-------------------
   // Page table walker
   //-------------------
@@ -340,9 +351,7 @@ module cva6_ptw_sv39x4
           vaddr_n           = itlb_vaddr_i;
           state_d           = WAIT_GRANT;
           itlb_miss_o       = 1'b1;
-          if (itlb_vaddr_i >= itlb_filter_cfg_i.addr_base && itlb_vaddr_i < itlb_filter_cfg_i.addr_base + itlb_filter_cfg_i.addr_size) begin
-            itlb_filtered_miss_o = 1'b1;
-          end
+          itlb_filtered_miss_o = ((itlb_vaddr_i & itlb_addr_mask) == (itlb_filter_cfg_i.addr_base & itlb_addr_mask));
           // we got an DTLB miss
         end else if ((en_ld_st_translation_i || en_ld_st_g_translation_i) & dtlb_access_i & ~dtlb_hit_i) begin
           if (en_ld_st_translation_i && en_ld_st_g_translation_i) begin
@@ -364,9 +373,7 @@ module cva6_ptw_sv39x4
           vaddr_n           = dtlb_vaddr_i;
           state_d           = WAIT_GRANT;
           dtlb_miss_o       = 1'b1;
-          if (dtlb_vaddr_i >= dtlb_filter_cfg_i.addr_base && dtlb_vaddr_i < dtlb_filter_cfg_i.addr_base + dtlb_filter_cfg_i.addr_size) begin
-            dtlb_filtered_miss_o = 1'b1;
-          end
+          dtlb_filtered_miss_o = ((dtlb_vaddr_i & dtlb_addr_mask) == (dtlb_filter_cfg_i.addr_base & dtlb_addr_mask));
         end
       end
 

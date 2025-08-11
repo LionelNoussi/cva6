@@ -628,12 +628,12 @@ module csr_regfile
         riscv::CSR_ITLBM_ADDR_BASEH: 
         if (riscv::XLEN == 32) csr_rdata = itlb_filter_cfg_q.addr_base[63:32];
         else read_access_exception = 1'b1;
-        riscv::CSR_ITLBM_ADDR_SIZE: csr_rdata = itlb_filter_cfg_q.addr_size;
+        riscv::CSR_ITLBM_ADDR_MASK: csr_rdata = itlb_filter_cfg_q.addr_mask;
         riscv::CSR_DTLBM_ADDR_BASE: csr_rdata = (riscv::XLEN == 32) ? dtlb_filter_cfg_q.addr_base[31:0] : dtlb_filter_cfg_q.addr_base;
         riscv::CSR_DTLBM_ADDR_BASEH:
         if (riscv::XLEN == 32) csr_rdata = dtlb_filter_cfg_q.addr_base[63:32];
         else read_access_exception = 1'b1;
-        riscv::CSR_DTLBM_ADDR_SIZE: csr_rdata = dtlb_filter_cfg_q.addr_size;
+        riscv::CSR_DTLBM_ADDR_MASK: csr_rdata = dtlb_filter_cfg_q.addr_mask;
         riscv::CSR_MCOUNTINHIBIT:
         if (PERF_COUNTER_EN)
           csr_rdata = {{(riscv::XLEN - (MHPMCounterNum + 3)) {1'b0}}, mcountinhibit_q};
@@ -1488,14 +1488,14 @@ module csr_regfile
         riscv::CSR_ITLBM_ADDR_BASEH:
         if (riscv::XLEN == 32) itlb_filter_cfg_d.addr_base[63:32] = csr_wdata[31:0];
         else update_access_exception = 1'b1;
-        riscv::CSR_ITLBM_ADDR_SIZE: itlb_filter_cfg_d.addr_size = csr_wdata[31:0];
+        riscv::CSR_ITLBM_ADDR_MASK: itlb_filter_cfg_d.addr_mask = csr_wdata[31:0];
         riscv::CSR_DTLBM_ADDR_BASE:
         if (riscv::XLEN == 32) dtlb_filter_cfg_d.addr_base[31:0] = csr_wdata[31:0];
         else dtlb_filter_cfg_d.addr_base = csr_wdata;
         riscv::CSR_DTLBM_ADDR_BASEH:
         if (riscv::XLEN == 32) dtlb_filter_cfg_d.addr_base[63:32] = csr_wdata[31:0];
         else update_access_exception = 1'b1;
-        riscv::CSR_DTLBM_ADDR_SIZE: dtlb_filter_cfg_d.addr_size = csr_wdata[31:0];
+        riscv::CSR_DTLBM_ADDR_MASK: dtlb_filter_cfg_d.addr_mask = csr_wdata[31:0];
         riscv::CSR_MCOUNTINHIBIT:
         if (PERF_COUNTER_EN) mcountinhibit_d = {csr_wdata[MHPMCounterNum+2:2], 1'b0, csr_wdata[0]};
         else update_access_exception = 1'b1;
